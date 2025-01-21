@@ -1,4 +1,4 @@
 # kansatti
-Paras koodi löytyy täältä
-Kommenttit on vaa tyhmille
-Valittii tälläneCase
+Paras koodi löytyy täältä\n
+Kommenttit on vaa tyhmille\n
+Valittii tälläneCase\n
