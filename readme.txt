@@ -1,2 +1,0 @@
-vityn hyvää koodii
-awNDBapiuwBDHOaÅJPWDK
