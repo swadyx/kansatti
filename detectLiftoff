@@ -4,6 +4,7 @@ unsigned long liftingOff = 0;
 // in ms
 int detectLiftoffAfter = 1;
 //in g-units
+// DON'T put the following value to 2, it results in floating point precision errors in the loop
 float liftOffSpeed = 1.8;
 
 void setup() {
