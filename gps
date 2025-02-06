@@ -34,5 +34,5 @@ void loop() {
     // Lähetetään tiedot ESP-väylään
     espSerial.println(statusMsg);
 
-    delay(500); // Päivitetään kerran sekunnissa
+    delay(500); // Change the delay, the 2 seconds might be best for tests but i liked to use 0.5sec so i could see fast if it could find any connections
 }
