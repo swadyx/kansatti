@@ -1,29 +1,137 @@
+#include <Arduino.h>
+#include <SensirionI2cScd4x.h>
+#include <Wire.h>
 #include "CanSatNeXT.h"
-#include <Adafruit_MCP3008.h>
 
-#define ADC_CS    12    // Chip Select for MCP3008
-// Declare an instance of the MCP3008 object
-Adafruit_MCP3008 adc;
+// macro definitions
+// make sure that we use the proper definition of NO_ERROR
+#ifdef NO_ERROR
+#undef NO_ERROR
+#endif
+#define NO_ERROR 0
+
+SensirionI2cScd4x sensor;
+
+static char errorMessage[64];
+static int16_t error;
+
+void PrintUint64(uint64_t& value) {
+    Serial.print("0x");
+    Serial.print((uint32_t)(value >> 32), HEX);
+    Serial.print((uint32_t)(value & 0xFFFFFFFF), HEX);
+}
 
 void setup() {
-  // Initialize serial communication for debugging
-  CanSatInit(100);
-  Serial.begin(115200);
-  
-  // Initialize the MCP3008 using the provided line:
-  adc.begin(SPI_CLK, SPI_MOSI, SPI_MISO, ADC_CS);
+
+    Serial.begin(115200);
+    CanSatInit(100);
+
+    while (!Serial) {
+        delay(100);
+    }
+    Wire.begin(21, 22); // SDA on GPIO 21, SCL on GPIO 22
+    sensor.begin(Wire, SCD41_I2C_ADDR_62);
+
+    uint64_t serialNumber = 0;
+    delay(30);
+    // Ensure sensor is in clean state
+    error = sensor.wakeUp();
+    if (error != NO_ERROR) {
+        Serial.print("Error trying to execute wakeUp(): ");
+        errorToString(error, errorMessage, sizeof errorMessage);
+        Serial.println(errorMessage);
+    }
+    error = sensor.stopPeriodicMeasurement();
+    if (error != NO_ERROR) {
+        Serial.print("Error trying to execute stopPeriodicMeasurement(): ");
+        errorToString(error, errorMessage, sizeof errorMessage);
+        Serial.println(errorMessage);
+    }
+    error = sensor.reinit();
+    if (error != NO_ERROR) {
+        Serial.print("Error trying to execute reinit(): ");
+        errorToString(error, errorMessage, sizeof errorMessage);
+        Serial.println(errorMessage);
+    }
+    // Read out information about the sensor
+    error = sensor.getSerialNumber(serialNumber);
+    if (error != NO_ERROR) {
+        Serial.print("Error trying to execute getSerialNumber(): ");
+        errorToString(error, errorMessage, sizeof errorMessage);
+        Serial.println(errorMessage);
+        return;
+    }
+    Serial.print("serial number: ");
+    PrintUint64(serialNumber);
+    Serial.println();
+    //
+    // If temperature offset and/or sensor altitude compensation
+    // is required, you should call the respective functions here.
+    // Check out the header file for the function definitions.
+    // Start periodic measurements (5sec interval)
+    error = sensor.startPeriodicMeasurement();
+    if (error != NO_ERROR) {
+        Serial.print("Error trying to execute startPeriodicMeasurement(): ");
+        errorToString(error, errorMessage, sizeof errorMessage);
+        Serial.println(errorMessage);
+        return;
+    }
+    //
+    // If low-power mode is required, switch to the low power
+    // measurement function instead of the standard measurement
+    // function above. Check out the header file for the definition.
+    // For SCD41, you can also check out the single shot measurement example.
+    //
 }
 
 void loop() {
-  // Read the value from channel 0 where the MQ sensor is connected
-  int sensorValue1 = adc.readADC(0); // Change the channel if necessary
-  int sensorValue2 = adc.readADC(1); // Change the channel if necessary
-  
-  // Print the sensor value to the Serial Monitor
-  Serial.print("MQ Sensor Values: ");
-  Serial.println(sensorValue1);
-  Serial.println(sensorValue2);
-  
-  // Wait 1 second before taking the next reading
-  delay(1000);
+
+    bool dataReady = false;
+    uint16_t co2Concentration = 0;
+    float temperature = 0.0;
+    float relativeHumidity = 0.0;
+    //
+    // Slow down the sampling to 0.2Hz.
+    //
+    delay(5000);
+    error = sensor.getDataReadyStatus(dataReady);
+    if (error != NO_ERROR) {
+        Serial.print("Error trying to execute getDataReadyStatus(): ");
+        errorToString(error, errorMessage, sizeof errorMessage);
+        Serial.println(errorMessage);
+        return;
+    }
+    while (!dataReady) {
+        delay(100);
+        error = sensor.getDataReadyStatus(dataReady);
+        if (error != NO_ERROR) {
+            Serial.print("Error trying to execute getDataReadyStatus(): ");
+            errorToString(error, errorMessage, sizeof errorMessage);
+            Serial.println(errorMessage);
+            return;
+        }
+    }
+    //
+    // If ambient pressure compenstation during measurement
+    // is required, you should call the respective functions here.
+    // Check out the header file for the function definition.
+    error =
+        sensor.readMeasurement(co2Concentration, temperature, relativeHumidity);
+    if (error != NO_ERROR) {
+        Serial.print("Error trying to execute readMeasurement(): ");
+        errorToString(error, errorMessage, sizeof errorMessage);
+        Serial.println(errorMessage);
+        return;
+    }
+    //
+    // Print results in physical units.
+    Serial.print("CO2 concentration [ppm]: ");
+    Serial.print(co2Concentration);
+    Serial.println();
+    Serial.print("Temperature [°C]: ");
+    Serial.print(temperature);
+    Serial.println();
+    Serial.print("Relative Humidity [RH]: ");
+    Serial.print(relativeHumidity);
+    Serial.println();
 }
