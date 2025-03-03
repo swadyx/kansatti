@@ -1,0 +1,22 @@
+#include "CanSatNeXT.h"
+
+void setup() {
+
+  Serial.begin(115200);
+
+  CanSatInit();
+}
+void MainBoardSensors() {
+  int value = analogRead(LDR);
+  float t = readTemperature();
+  float p = readPressure(); 
+
+  Serial.print("Pressure:\t");
+  Serial.print(p);
+  Serial.print("\nTemperature:\t");
+  Serial.print(t);
+  Serial.print("LDR value:");
+  Serial.println(value);
+
+  delay(2000);
+}
