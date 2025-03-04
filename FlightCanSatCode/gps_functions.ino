@@ -1,3 +1,5 @@
+#include "definitions.h"
+
 void setup_neo6m() {
   Serial2.begin(9600, SERIAL_8N1, 16, 17);  // GPS connected to Serial2 (UART2)
 }
