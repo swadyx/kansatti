@@ -30,5 +30,9 @@ struct BoardSensorsData{
   float temperature;
   float pressure;
   int ldr;
+  int acceleration;
+  int acc_x;
+  int acc_y;
+  int acc_y;
 };
 #endif // DEFINITIONS_H
