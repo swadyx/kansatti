@@ -26,5 +26,9 @@ struct GPSData {
   int minute;
   int second;
 };
-
+struct BoardSensorsData{
+  float temperature;
+  float pressure;
+  int ldr;
+};
 #endif // DEFINITIONS_H
