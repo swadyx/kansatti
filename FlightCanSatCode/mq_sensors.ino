@@ -1,3 +1,5 @@
+#include "definitions.h"
+
 #define ADC_CS    12    // Chip Select for MCP3008
 // Declare an instance of the MCP3008 object
 Adafruit_MCP3008 adc;
