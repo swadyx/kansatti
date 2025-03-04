@@ -1,12 +1,8 @@
 #include "CanSatNeXT.h"
 
-void setup_Board_Sensors() {
 
-  Serial.begin(115200);
-
-  CanSatInit();
-}
-void Pressure_and_Temperature() {
+BoardSensorsData Get_Board_SensorData() {
+  BoardSensorsData data;
   int value = analogRead(LDR);
   float t = readTemperature();
   float p = readPressure(); 
@@ -17,6 +13,6 @@ void Pressure_and_Temperature() {
   Serial.print(t);
   Serial.print("LDR value:");
   Serial.println(value);
+  return data;
 
-  delay(2000);
 }
