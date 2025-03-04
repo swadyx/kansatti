@@ -1,3 +1,5 @@
+#include "definitions.h"
+
 // macro definitions
 // make sure that we use the proper definition of NO_ERROR
 #ifdef NO_ERROR
