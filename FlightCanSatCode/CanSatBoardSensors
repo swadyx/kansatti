@@ -1,18 +1,18 @@
-#include "CanSatNeXT.h"
-
+#include "definitions.h"
 
 BoardSensorsData Get_Board_SensorData() {
   BoardSensorsData data;
-  int value = analogRead(LDR);
-  float t = readTemperature();
-  float p = readPressure(); 
+  data.ldr = analogRead(LDR);
+  data.temperature = readTemperature();
+  data.pressure = readPressure(); 
+  float ax, ay, az;
+  readAcceleration(ax, ay, az);
+  float totalSquared = ax*ax+ay*ay+az*az;
+  data.acceleration = Math.sqrt(totalSquared);
+  data.acc_x = ax;
+  data.acc_y = ay;
+  data.acc_z = az;
 
-  Serial.print("Pressure:\t");
-  Serial.print(p);
-  Serial.print("\nTemperature:\t");
-  Serial.print(t);
-  Serial.print("LDR value:");
-  Serial.println(value);
   return data;
 
 }
