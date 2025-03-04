@@ -1,5 +1,3 @@
-#include "definitions.h"
-
 // macro definitions
 // make sure that we use the proper definition of NO_ERROR
 #ifdef NO_ERROR
@@ -103,4 +101,3 @@ SCD40Data get_scd40_data() {
   data.error = sensor.readMeasurement(data.co2Concentration, data.temperature, data.relativeHumidity);
   return data;
 }
-

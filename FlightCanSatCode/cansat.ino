@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <TinyGPS++.h>
 #include "definitions.h"
+#include <math.h>
 
 void setup() {
   // put your setup code here, to run once:
@@ -60,5 +61,11 @@ void loop() {
     Serial.println("-------------------");
   }
 
-  delay(500);
+  BoardSensorsData boardData = get_board_sensor_data();
+  Serial.println(boardData.acceleration);
+  Serial.println(boardData.temperature);
+  Serial.println(boardData.ldr);
+  Serial.println(boardData.pressure);
+  
+  delay(6000);
 }

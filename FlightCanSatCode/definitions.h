@@ -26,13 +26,15 @@ struct GPSData {
   int minute;
   int second;
 };
+
 struct BoardSensorsData{
   float temperature;
   float pressure;
-  int ldr;
-  int acceleration;
-  int acc_x;
-  int acc_y;
-  int acc_z;
+  float ldr;
+  float acceleration;
+  float acc_x;
+  float acc_y;
+  float acc_z;
 };
+
 #endif // DEFINITIONS_H
