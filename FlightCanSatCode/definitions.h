@@ -37,4 +37,11 @@ struct BoardSensorsData{
   float acc_z;
 };
 
+struct Measurements {
+  SCD40Data scd40;
+  MQSensorData mq;
+  GPSData gps;
+  BoardSensorsData board;
+};
+
 #endif // DEFINITIONS_H
