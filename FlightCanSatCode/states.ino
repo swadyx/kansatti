@@ -12,7 +12,10 @@ void prelaunch() {
 // transmit all data
 void flight_mode() {
   Measurements data = get_measurements();
-  save_data(data);
+  bool data_saved_succesfully = save_data(data);
+  if (!data_saved_succesfully) {
+    Serial.println("Data save not successfull!");
+  }
   transmit_data(data);
   if (detect_landing()) {
     STATE = 2; // landing
