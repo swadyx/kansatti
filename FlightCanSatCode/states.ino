@@ -13,10 +13,8 @@ void prelaunch() {
 void flight_mode() {
   Measurements data = get_measurements();
   bool data_saved_succesfully = save_data(data);
-  if (!data_saved_succesfully) {
-    Serial.println("Data save not successfull!");
-  }
-  transmit_data(data);
+  Serial.println(data_saved_succesfully);
+  // transmit_data(data);
   if (detect_landing()) {
     STATE = 2; // landing
     Serial.println("Transitioning to RECOVERY mode.");

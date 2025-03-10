@@ -32,83 +32,119 @@ bool detect_landing() {
 }
 
 bool setup_data_file() {
-  // Check if an SD-card is present
-  if (!SDCardPresent()) {
-    Serial.println("No sd-card found!");
-    return false;
-  }
-  
+  File file = SD.open("/data.csv", FILE_WRITE);
+  // if (file) {
+  //   return true;
+  // }
+
   // Define header for CSV file
-  String header = "co2Concentration,scd40_temperature,scd40_relativeHumidity,scd40_error,"
+  String header = "co2_concentration,scd40_temperature,scd40_relative_humidity,scd40_error,"
                   "mq135,mq4,dataUpdated,latitude,longitude,altitude,speed,satellites,"
                   "hour,minute,second,board_temperature,board_pressure,board_ldr,"
                   "board_acceleration,board_acc_x,board_acc_y,board_acc_z\n";
-  
-  // If the file doesn't exist, write the header to initialize it
-  if (!fileExists("/measurements.csv")) {
-    uint8_t status = writeFile("/measurements.csv", header);
-    Serial.println(status);
-    if (status != 0) {
-      return false;
-    }
+
+  size_t expectedBytes = header.length();
+
+  // Write the string and get the number of bytes written.
+  size_t bytesWritten = file.print(header);
+
+  // Check if the number of bytes written matches the string length.
+  if (bytesWritten == expectedBytes) {
+    Serial.println("Write success: all bytes written.");
+    return true;
+  } else {
+    Serial.print("Write error: expected ");
+    Serial.print(expectedBytes);
+    Serial.print(" bytes, but only wrote ");
+    Serial.println(bytesWritten);
+    return false;
   }
-  return true;
 }
 
 bool save_data(Measurements data) {
-  // Check if an SD-card is present
-  if (!SDCardPresent()) {
+   File file = SD.open("/data.csv", FILE_APPEND);
+  // if (file) {
+  //   return true;
+  // }
+
+  // Write the string and get the number of bytes written.
+  size_t bytesWritten = file.print("ok mitä vituuuuuu\r\n");
+
+  // Check if the number of bytes written matches the string length.
+  if (bytesWritten > 0) {
+    Serial.println("Write success: all bytes written.");
+    return true;
+  } else {
     return false;
   }
-  
-  String record = "";
-  
-  // SCD40 sensor data: if error equals 1, store zeros for these values.
-  if (data.scd40.error == 1) {
-    record += "0,0,0,0,";
-  } else {
-    record += String(data.scd40.co2Concentration) + ",";
-    record += String(data.scd40.temperature) + ",";
-    record += String(data.scd40.relativeHumidity) + ",";
-    record += String(data.scd40.error) + ",";
-  }
-  
-  // MQ sensor data
-  record += String(data.mq.mq135) + ",";
-  record += String(data.mq.mq4) + ",";
-  
-  // GPS data: if not updated, store zeros for all GPS fields.
-  if (data.gps.dataUpdated) {
-    record += "1,";  // Indicate data updated
-    record += String(data.gps.latitude) + ",";
-    record += String(data.gps.longitude) + ",";
-    record += String(data.gps.altitude) + ",";
-    record += String(data.gps.speed) + ",";
-    record += String(data.gps.satellites) + ",";
-    record += String(data.gps.hour) + ",";
-    record += String(data.gps.minute) + ",";
-    record += String(data.gps.second) + ",";
-  } else {
-    // Data not updated, write zeros for each GPS field (9 fields)
-    record += "0,0,0,0,0,0,0,0,0,";
-  }
-  
-  // Board sensor data
-  record += String(data.board.temperature) + ",";
-  record += String(data.board.pressure) + ",";
-  record += String(data.board.ldr) + ",";
-  record += String(data.board.acceleration) + ",";
-  record += String(data.board.acc_x) + ",";
-  record += String(data.board.acc_y) + ",";
-  record += String(data.board.acc_z) + "\n";
-  
-  // Append the record to "measurements.csv"
-  uint8_t status = appendFile("measurements.csv", record);
-  
-  // Return true if the write operation was successful (status==0)
-  return (status == 0);
 }
-  
-void transmit_data(Measurements data) {
 
+void send_data(Measurements data){
+  float ldr = data.board.ldr; // mainboard built-in sensors data
+  float temperature = data.board.temperature;
+  float pressure = data.board.pressure;
+  float acceleration = data.board.acceleration;
+
+  float temperaturescd40 = data.scd40.temperature; // scd40 sensor datas
+  uint16_t co2Concentration = data.scd40.co2Concentration;
+  float relativehumidity = data.scd40.relativeHumidity;
+  int error = data.scd40.error;
+
+  int mq135 = data.mq.mq135;  // mq-sensors data
+  int mq4 = data.mq.mq4;
+  
+  bool updatedData = data.gps.dataUpdated; // gps sensor data
+  double lat = data.gps.latitude;
+  double lon = data.gps.longitude;
+  double alt = data.gps.altitude;
+  double spd = data.gps.speed;
+  uint8_t stlts = data.gps.satellites;
+  int hour = data.gps.hour;
+  int min = data.gps.minute;
+  int sec = data.gps.second;
+
+String dataPacket = String("Temperature: ") +
+                    String(temperature) + ", Pressure: " + 
+                    String(pressure) + ", LDR: " + 
+                    String(ldr) + ",Acceleration: " + 
+                    String(acceleration) + ",SCD40 Temp: " +
+                    String(temperaturescd40) + ", CO2 concentration: " + 
+                    String(co2Concentration) + ", Rel. Humid. : " + 
+                    String(relativehumidity) + ", MQ135: " +
+                    String(mq135) + ", MQ4: " + 
+                    String(mq4) + ", Latitude: " +
+                    String(lat, 6) + ", Longtitude: " + 
+                    String(lon, 6) + ", Altitude: " + 
+                    String(alt) + ", Speed: " +
+                    String(spd) + ", Satellites: " + 
+                    String(stlts) + ", HH:MM:SS --> " +
+                    String(hour) + ":" + 
+                    String(min) + ":" + 
+                    String(sec);
+  
+sendData(dataPacket);
 }
+
+void only_gps_data(Measurements data){
+  bool updatedData = data.gps.dataUpdated; // gps sensor data
+  double lat = data.gps.latitude;
+  double lon = data.gps.longitude;
+  double alt = data.gps.altitude;
+  double spd = data.gps.speed;
+  uint8_t stlts = data.gps.satellites;
+  int hour = data.gps.hour;
+  int min = data.gps.minute;
+  int sec = data.gps.second;
+
+  String dataPacket1 = String(lat, 6) + "," + 
+                      String(lon, 6) + "," + 
+                      String(alt) + "," +
+                      String(spd) + "," + 
+                      String(stlts) + "," +
+                      String(hour) + ":" + 
+                      String(min) + ":" + 
+                      String(sec);
+  
+  sendData(dataPacket1);
+}
+

@@ -14,6 +14,8 @@ MQSensorData get_mq_sensor_data() {
   MQSensorData data;
   data.mq135 = adc.readADC(0);
   data.mq4 = adc.readADC(1);
+  data.mq135 = 10;
+  data.mq4 = 10;
   
   return data;
 }

@@ -9,44 +9,63 @@
 
 int STATE = 0; // Prelaunch
 long LAUNCH_TIME = 0; // Time
-int LIFTOFF_ACCEL_THRESHOLD = 1.5; // Päivitetty arvo 1.8 -> 1.5 ja float -> int
+float LIFTOFF_ACCEL_THRESHOLD = 1.5; // Päivitetty arvo 1.8 -> 1.5 ja float -> int
 int searchTime = 0;
 
 void setup() {
   CanSatInit(100);
   Serial.begin(115200);
-  if (!setup_data_file()) {
+
+  MQSensorData mq = get_mq_sensor_data();
+  if (mq.mq4 != 0) { // Muutettu logiikka (ennen == 0)
+    Serial.println("MQ4 working!");
+  } else {
     while (true) {
-      setup_data_file();
-      Serial.println("SD-card initialization failed!");
-      delay(3000);
+      Serial.println("MQ4 not working!");
+    }
+  }
+  if (mq.mq135 != 0) { // Muutettu logiikka (ennen == 0)
+    Serial.println("MQ135 working!");
+  } else {
+    while (true) {
+      Serial.println("MQ135 not working!");
     }
   }
 
+  bool sd_success = setup_data_file();
+  if (!sd_success) {
+    while (true) {
+      Serial.println("SD-init failed");
+      delay(3000);
+    }
+  } else {
+    Serial.println("SD initialization successfull!");
+  }
+  
   setup_scd40();
   setup_mq_sensors();
   setup_neo6m();
 
   // GPS-fixin hakeminen
-  while (true) {
-    GPSData gpsData = get_gps_data();
-    if (gpsData.dataUpdated) {
-      Serial.println("GPS-fix acquired!");
-      Serial.print("Total search time: ");
-      Serial.print(searchTime);
-      Serial.println(" seconds");
-      break;
-    }
+  // while (true) {
+  //   GPSData gpsData = get_gps_data();
+  //   if (gpsData.dataUpdated) {
+  //     Serial.println("GPS-fix acquired!");
+  //     Serial.print("Total search time: ");
+  //     Serial.print(searchTime);
+  //     Serial.println(" seconds");
+  //     break;
+  //   }
     
-    searchTime++;
-    Serial.print("Waiting for a GPS fix... ");
-    Serial.print(searchTime);
-    Serial.println(" seconds elapsed");
-    char info[50];
-    sprintf(info, "Data not found after waiting %d seconds", searchTime);
-    sendData(info);
-    delay(1000);
-  }
+  //   searchTime++;
+  //   Serial.print("Waiting for a GPS fix... ");
+  //   Serial.print(searchTime);
+  //   Serial.println(" seconds elapsed");
+  //   char info[50];
+  //   sprintf(info, "Data not found after waiting %d seconds", searchTime);
+  //   sendData(info);
+  //   delay(1000);
+  // }
 
   // SCD40-sensorin tarkistus
   SCD40Data scd40;
@@ -92,23 +111,6 @@ void setup() {
   } else {
     while (true) {
       Serial.println("Board acceleration-sensor not working!");
-    }
-  }
-
-  // MQ-sensorien tarkistus
-  MQSensorData mq = get_mq_sensor_data();
-  if (mq.mq4 != 0) { // Muutettu logiikka (ennen == 0)
-    Serial.println("MQ4 working!");
-  } else {
-    while (true) {
-      Serial.println("MQ4 not working!");
-    }
-  }
-  if (mq.mq135 != 0) { // Muutettu logiikka (ennen == 0)
-    Serial.println("MQ135 working!");
-  } else {
-    while (true) {
-      Serial.println("MQ135 not working!");
     }
   }
 }
