@@ -9,7 +9,8 @@
 
 int STATE = 0; // Prelaunch
 long LAUNCH_TIME = 0; // Time
-float LIFTOFF_ACCEL_THRESHOLD = 1.8;
+int LIFTOFF_ACCEL_THRESHOLD = 1.5; // Päivitetty arvo 1.8 -> 1.5 ja float -> int
+int searchTime = 0;
 
 void setup() {
   CanSatInit(100);
@@ -21,22 +22,33 @@ void setup() {
       delay(3000);
     }
   }
+
   setup_scd40();
   setup_mq_sensors();
   setup_neo6m();
 
-  // check that the gps is working
-  // while (true) {
-  //   GPSData gpsData = get_gps_data();
-  //   if (gpsData.dataUpdated) {
-  //     Serial.println("GPS-fix acquired!");
-  //     break;
-  //   }
-  //   Serial.println("Waiting for a gps fix...");
-  //   delay(3000);
-  // }
+  // GPS-fixin hakeminen
+  while (true) {
+    GPSData gpsData = get_gps_data();
+    if (gpsData.dataUpdated) {
+      Serial.println("GPS-fix acquired!");
+      Serial.print("Total search time: ");
+      Serial.print(searchTime);
+      Serial.println(" seconds");
+      break;
+    }
+    
+    searchTime++;
+    Serial.print("Waiting for a GPS fix... ");
+    Serial.print(searchTime);
+    Serial.println(" seconds elapsed");
+    char info[50];
+    sprintf(info, "Data not found after waiting %d seconds", searchTime);
+    sendData(info);
+    delay(1000);
+  }
 
-  // check that scd40 is collecting data.
+  // SCD40-sensorin tarkistus
   SCD40Data scd40;
   while (true) {
     scd40 = get_scd40_data();
@@ -50,17 +62,17 @@ void setup() {
     }
   }
 
-  // check that board sensors are working.
+  // Board-sensoreiden tarkistus
   BoardSensorsData board = get_board_sensor_data();
   if (board.ldr > 0) {
-    Serial.print("LDR-sensor working!");
+    Serial.println("LDR-sensor working!");
   } else {
     while (true) {
       Serial.println("LDR sensor not working!");
     }
   }
-  if (board.temperature > -50 &&  board.temperature < 60) {
-    Serial.print("Board temp-sensor working!");
+  if (board.temperature > -50 && board.temperature < 60) {
+    Serial.println("Board temp-sensor working!");
   } else {
     while (true) {
       Serial.println("Board temp-sensor not working!");
@@ -68,32 +80,32 @@ void setup() {
       delay(1000);
     }
   }
-  if (board.pressure > 80000 &&  board.pressure < 120000) {
-    Serial.print("Board pressure-sensor working!");
+  if (board.pressure > 80000 && board.pressure < 120000) {
+    Serial.println("Board pressure-sensor working!");
   } else {
     while (true) {
       Serial.println("Board pressure-sensor not working!");
     }
   }
   if (board.acceleration != 0) {
-    Serial.print("Board acceleration-sensor working!");
+    Serial.println("Board acceleration-sensor working!");
   } else {
     while (true) {
       Serial.println("Board acceleration-sensor not working!");
     }
   }
 
-  // check that mq-sensors are working
+  // MQ-sensorien tarkistus
   MQSensorData mq = get_mq_sensor_data();
-  if (mq.mq4 == 0) {
-    Serial.print("MQ4 working!");
+  if (mq.mq4 != 0) { // Muutettu logiikka (ennen == 0)
+    Serial.println("MQ4 working!");
   } else {
     while (true) {
       Serial.println("MQ4 not working!");
     }
   }
-  if (mq.mq135 == 0) {
-    Serial.print("MQ135 working!");
+  if (mq.mq135 != 0) { // Muutettu logiikka (ennen == 0)
+    Serial.println("MQ135 working!");
   } else {
     while (true) {
       Serial.println("MQ135 not working!");
@@ -102,15 +114,13 @@ void setup() {
 }
 
 void loop() {
-  if(STATE == 0)
-  {
+  if (STATE == 0) {
     prelaunch();
-  }else if(STATE == 1)
-  {
+  } else if (STATE == 1) {
     flight_mode();
-  }else if(STATE == 2){
+  } else if (STATE == 2) {
     recovery_mode();
-  }else{
+  } else {
     Serial.println("What the sigma?");
     delay(1000);
   }
