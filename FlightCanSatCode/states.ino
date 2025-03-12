@@ -1,27 +1,27 @@
-void prelaunch() {
-  if (detect_liftoff()) {
-    LAUNCH_TIME = millis();
-    STATE = 1; // flight
-    Serial.println("Transitioning to FLIGHT mode.");
-  }
+void prelaunch_mode() {
+  blinkLED();
+  delay(2000);
 }
 
-// check for landing (HOW?)
-// collect all data
-// save all data to sd card
-// transmit all data
-void flight_mode() {
+void flight_mode(){
+  float LDR_voltage = analogReadVoltage(LDR);
   Measurements data = get_measurements();
-  bool data_saved_succesfully = save_data(data);
-  Serial.println(data_saved_succesfully);
-  // transmit_data(data);
-  if (detect_landing()) {
-    STATE = 2; // landing
-    Serial.println("Transitioning to RECOVERY mode.");
-  }
+  sendMeasurements(data);
+  // sendData("DATA" + String(LDR_voltage));
+  blinkLED();
+  delay(1000);
 }
 
-// transmit gps-data
-void recovery_mode() {
 
+void recovery_mode()
+{
+  GPSData gps = get_gps_data();
+  if (!gps.dataUpdated) {
+    Serial.print("New gps data not available!");
+    sendData("New gps data not available");
+  } else {
+    sendGPS(gps);
+  }
+  blinkLED();
+  delay(5000);
 }

@@ -18,14 +18,7 @@ void PrintUint64(uint64_t& value) {
     Serial.print((uint32_t)(value & 0xFFFFFFFF), HEX);
 }
 
-void setup_scd40() {
-
-    Serial.begin(115200);
-    CanSatInit(100);
-
-    while (!Serial) {
-        delay(100);
-    }
+bool setup_scd40() {
     Wire.begin(21, 22); // SDA on GPIO 21, SCL on GPIO 22
     sensor.begin(Wire, SCD41_I2C_ADDR_62);
 
@@ -37,18 +30,21 @@ void setup_scd40() {
         Serial.print("Error trying to execute wakeUp(): ");
         errorToString(error, errorMessage, sizeof errorMessage);
         Serial.println(errorMessage);
+        return false;
     }
     error = sensor.stopPeriodicMeasurement();
     if (error != NO_ERROR) {
         Serial.print("Error trying to execute stopPeriodicMeasurement(): ");
         errorToString(error, errorMessage, sizeof errorMessage);
         Serial.println(errorMessage);
+        return false;
     }
     error = sensor.reinit();
     if (error != NO_ERROR) {
         Serial.print("Error trying to execute reinit(): ");
         errorToString(error, errorMessage, sizeof errorMessage);
         Serial.println(errorMessage);
+        return false;
     }
     // Read out information about the sensor
     error = sensor.getSerialNumber(serialNumber);
@@ -56,29 +52,17 @@ void setup_scd40() {
         Serial.print("Error trying to execute getSerialNumber(): ");
         errorToString(error, errorMessage, sizeof errorMessage);
         Serial.println(errorMessage);
-        return;
+        return false;
     }
-    Serial.print("serial number: ");
-    PrintUint64(serialNumber);
-    Serial.println();
-    //
-    // If temperature offset and/or sensor altitude compensation
-    // is required, you should call the respective functions here.
-    // Check out the header file for the function definitions.
-    // Start periodic measurements (5sec interval)
+    
     error = sensor.startPeriodicMeasurement();
     if (error != NO_ERROR) {
         Serial.print("Error trying to execute startPeriodicMeasurement(): ");
         errorToString(error, errorMessage, sizeof errorMessage);
         Serial.println(errorMessage);
-        return;
+        return false;
     }
-    //
-    // If low-power mode is required, switch to the low power
-    // measurement function instead of the standard measurement
-    // function above. Check out the header file for the definition.
-    // For SCD41, you can also check out the single shot measurement example.
-    //
+  return true;
 }
 
 SCD40Data get_scd40_data() {

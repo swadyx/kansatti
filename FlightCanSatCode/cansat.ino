@@ -1,129 +1,157 @@
-#include <Adafruit_MCP3008.h>
 #include "CanSatNeXT.h"
 #include <Arduino.h>
 #include <SensirionI2cScd4x.h>
 #include <Wire.h>
 #include <TinyGPS++.h>
-#include "SD.h"
 #include "definitions.h"
 
+// Global state variables
 int STATE = 0; // Prelaunch
 long LAUNCH_TIME = 0; // Time
-float LIFTOFF_ACCEL_THRESHOLD = 1.5; // Päivitetty arvo 1.8 -> 1.5 ja float -> int
-int searchTime = 0;
+float LIFTOFF_ACCEL_THRESHOLD = 1.5; 
+int SEARCH_TIME = 0;
+bool LED_IS_ON = false;
+
+// Sensor initialization flags
+bool SCD40_INITIALIZED    = false;
+bool GPS_INITIALIZED      = false;
+bool MQ4_INITIALIZED      = false;
+bool MQ135_INITIALIZED    = false;
+bool LDR_INITIALIZED      = false;
+bool BOARD_TEMP_INITIALIZED     = false;
+bool BOARD_PRESSURE_INITIALIZED = false;
+bool BOARD_ACCEL_INITIALIZED    = false;
 
 void setup() {
-  CanSatInit(100);
-  Serial.begin(115200);
+  CanSatInit(28);
+  Serial.begin(115200);  // for debugging (if needed)
+  sendData("CANSAT ON!");
+  setup_neo6m();
+}
 
-  MQSensorData mq = get_mq_sensor_data();
-  if (mq.mq4 != 0) { // Muutettu logiikka (ennen == 0)
-    Serial.println("MQ4 working!");
-  } else {
-    while (true) {
-      Serial.println("MQ4 not working!");
-    }
-  }
-  if (mq.mq135 != 0) { // Muutettu logiikka (ennen == 0)
-    Serial.println("MQ135 working!");
-  } else {
-    while (true) {
-      Serial.println("MQ135 not working!");
-    }
-  }
+// This helper sends the message via sendData() and also prints it to the Serial Monitor.
+void logAndSend(String message) {
+  sendData(message);
+  Serial.println(message);
+}
 
-  bool sd_success = setup_data_file();
-  if (!sd_success) {
-    while (true) {
-      Serial.println("SD-init failed");
-      delay(3000);
-    }
+bool init_scd40_sensor() {
+  if (setup_scd40()) {
+    logAndSend("SCD40 initialized!");
+    SCD40_INITIALIZED = true;
   } else {
-    Serial.println("SD initialization successfull!");
+    logAndSend("SCD40 not working!");
+    return false;
   }
   
-  setup_scd40();
-  setup_mq_sensors();
-  setup_neo6m();
-
-  // GPS-fixin hakeminen
-  // while (true) {
-  //   GPSData gpsData = get_gps_data();
-  //   if (gpsData.dataUpdated) {
-  //     Serial.println("GPS-fix acquired!");
-  //     Serial.print("Total search time: ");
-  //     Serial.print(searchTime);
-  //     Serial.println(" seconds");
-  //     break;
-  //   }
-    
-  //   searchTime++;
-  //   Serial.print("Waiting for a GPS fix... ");
-  //   Serial.print(searchTime);
-  //   Serial.println(" seconds elapsed");
-  //   char info[50];
-  //   sprintf(info, "Data not found after waiting %d seconds", searchTime);
-  //   sendData(info);
-  //   delay(1000);
-  // }
-
-  // SCD40-sensorin tarkistus
+  // Loop until a valid SCD40 reading is obtained
   SCD40Data scd40;
   while (true) {
     scd40 = get_scd40_data();
     if (scd40.error == NO_ERROR) {
-      Serial.println("SCD40 working!");
+      logAndSend("SCD40 working!");
       break;
     } else {
-      Serial.print("SCD40 data not available... error code: ");
-      Serial.println(scd40.error);
+      logAndSend("SCD40 data not available... error code: " + String(scd40.error));
       delay(3000);
     }
   }
+  return true;
+}
 
-  // Board-sensoreiden tarkistus
-  BoardSensorsData board = get_board_sensor_data();
-  if (board.ldr > 0) {
-    Serial.println("LDR-sensor working!");
-  } else {
-    while (true) {
-      Serial.println("LDR sensor not working!");
+bool init_gps_sensor() {
+  unsigned long startTime = millis();
+  while (millis() - startTime < 30000) {  // Wait at most 30 seconds
+    GPSData gpsData = get_gps_data();
+    if (gpsData.dataUpdated) {
+      logAndSend("GPS-fix acquired!");
+      GPS_INITIALIZED = true;
+      return true;
     }
+    logAndSend("Waiting for a GPS fix...");
+    delay(1000);
   }
-  if (board.temperature > -50 && board.temperature < 60) {
-    Serial.println("Board temp-sensor working!");
+  logAndSend("GPS initialization timed out!");
+  return false;
+}
+
+bool init_mq_sensor() {
+  setup_mq_sensors();
+  MQSensorData mq = get_mq_sensor_data();
+  
+  if (mq.mq4 != 0) {
+    logAndSend("MQ4 working!");
+    MQ4_INITIALIZED = true;
   } else {
     while (true) {
-      Serial.println("Board temp-sensor not working!");
-      Serial.println(board.temperature);
+      logAndSend("MQ4 not working!");
       delay(1000);
     }
   }
+  
+  if (mq.mq135 != 0) {
+    logAndSend("MQ135 working!");
+    MQ135_INITIALIZED = true;
+  } else {
+    logAndSend("MQ135 not working!");
+  }
+  
+  return true;
+}
+
+bool init_board_sensor() {
+  BoardSensorsData board = get_board_sensor_data();
+  
+  if (board.ldr > 0) {
+    logAndSend("LDR-sensor working!");
+    LDR_INITIALIZED = true;
+  } else {
+    while (true) {
+      logAndSend("LDR sensor not working!");
+      delay(1000);
+    }
+  }
+  
+  if (board.temperature > -50 && board.temperature < 60) {
+    logAndSend("Board temp-sensor working!");
+    BOARD_TEMP_INITIALIZED = true;
+  } else {
+    while (true) {
+      logAndSend("Board temp-sensor not working! Temperature: " + String(board.temperature));
+      delay(1000);
+    }
+  }
+  
   if (board.pressure > 80000 && board.pressure < 120000) {
-    Serial.println("Board pressure-sensor working!");
+    logAndSend("Board pressure-sensor working!");
+    BOARD_PRESSURE_INITIALIZED = true;
   } else {
     while (true) {
-      Serial.println("Board pressure-sensor not working!");
+      logAndSend("Board pressure-sensor not working!");
+      delay(1000);
     }
   }
+  
   if (board.acceleration != 0) {
-    Serial.println("Board acceleration-sensor working!");
+    logAndSend("Board acceleration-sensor working!");
+    BOARD_ACCEL_INITIALIZED = true;
   } else {
     while (true) {
-      Serial.println("Board acceleration-sensor not working!");
+      logAndSend("Board acceleration-sensor not working!");
+      delay(1000);
     }
   }
+  
+  return true;
 }
 
 void loop() {
+  sendData("STATE: " + String(STATE));
   if (STATE == 0) {
-    prelaunch();
+    prelaunch_mode();
   } else if (STATE == 1) {
     flight_mode();
   } else if (STATE == 2) {
     recovery_mode();
-  } else {
-    Serial.println("What the sigma?");
-    delay(1000);
   }
 }
