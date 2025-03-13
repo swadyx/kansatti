@@ -23,7 +23,6 @@ void savedata(Measurements data) {
   float temperaturescd40 = data.scd40.temperature;  // scd40 sensor datas
   uint16_t co2Concentration = data.scd40.co2Concentration;
   float relativehumidity = data.scd40.relativeHumidity;
-  int error = data.scd40.error;
 
   int mq135 = data.mq.mq135;  // mq-sensors data
   int mq4 = data.mq.mq4;
@@ -37,16 +36,29 @@ void savedata(Measurements data) {
   int hour = data.gps.hour;
   int min = data.gps.minute;
   int sec = data.gps.second;
+  int error = data.scd40.error;
+  Serial.println(co2Concentration);
 
-  appendFile(SCD40temperatureFile, String(temperature, 2) + "\n");
+
+  appendFile(mq135File, String(mq135) + "\n");
+  appendFile(mq4File, String(mq4) + "\n");
+
   appendFile(ldrFile, String(ldr, 2) + "\n");
   appendFile(boardTemperatureFile, String(temperature, 2) + "\n");
   appendFile(pressureFile, String(pressure, 2) + "\n");
   appendFile(accelerationFile, String(acceleration, 2) + "\n");
-  appendFile(co2ConcentrationFile, String(co2Concentration, 2) + "\n");
+  
+  
+  if (error != 1){
+  appendFile(co2ConcentrationFile, String(co2Concentration) + "\n");
   appendFile(relativeHumidityFile, String(relativehumidity, 2) + "\n");
-  appendFile(mq135File, String(mq135, 2) + "\n");
-  appendFile(mq4File, String(mq4, 2) + "\n");
+  appendFile(SCD40temperatureFile, String(temperature, 2) + "\n");
+  sendData("New SCD40 data succesfully written into file!");
+  }
+  else if (error = 1){
+    sendData("Error in SCD40: No new data found!");
+  }
+  sendData("Data saved succesfully!");
 
 
 
