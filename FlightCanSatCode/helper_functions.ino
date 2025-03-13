@@ -1,3 +1,7 @@
+
+
+const String states = "/states.csv";
+
 Measurements get_measurements () {
   Measurements data;
   data.scd40= get_scd40_data();
@@ -84,12 +88,16 @@ void onDataReceived(String data) {
   
   if (data == "PRELAUNCH") {
     STATE = 0;
+    writeFile(states, String(State));
+
   }
   else if (data == "FLIGHT") {
     STATE = 1;
+    writeFile(states, String(STATE));
   }
   else if (data == "RECOVERY") {
     STATE = 2;
+    writeFile(states, String(STATE));
   }
   else if (data == "INIT_SCD40") {
     logAndSend("Initializing SCD40 sensor...");
