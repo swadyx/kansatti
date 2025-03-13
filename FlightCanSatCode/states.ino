@@ -8,8 +8,10 @@ void flight_mode(){
   Measurements data = get_measurements();
   sendMeasurements(data);
   // sendData("DATA" + String(LDR_voltage));
+  savedata(data);
   blinkLED();
   delay(1000);
+
 }
 
 
