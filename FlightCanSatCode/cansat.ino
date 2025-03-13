@@ -23,17 +23,24 @@ bool BOARD_PRESSURE_INITIALIZED = false;
 bool BOARD_ACCEL_INITIALIZED    = false;
 
 void setup() {
-  CanSatInit(28);
+  CanSatInit(10);
   Serial.begin(115200);  // for debugging (if needed)
   sendData("CANSAT ON!");
+  if (readFile(states) == "FLIGHT"){
+    flight_mode();
+  }
+  else if (readFile(states) == "RECOVERY"){
+    recovery_mode();
+  }
   setup_neo6m();
 }
 
-// This helper sends the message via sendData() and also prints it to the Serial Monitor.
 void logAndSend(String message) {
   sendData(message);
   Serial.println(message);
 }
+
+
 
 bool init_scd40_sensor() {
   if (setup_scd40()) {
