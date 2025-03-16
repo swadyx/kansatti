@@ -3,6 +3,9 @@
 #ifndef DEFINITIONS_H 
 #define DEFINITIONS_H
 
+const String datafile = "/data.csv";
+
+
 struct MQSensorData {
   int mq135;
   int mq4;
@@ -45,6 +48,9 @@ struct Measurements {
 };
 
 #endif // DEFINITIONS_H
+
+
+
 
 // Helper function to print a Measurements structure
 void printMeasurements(const Measurements& meas) {
