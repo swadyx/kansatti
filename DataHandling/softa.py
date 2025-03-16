@@ -12,6 +12,7 @@ import numpy as np
 from collections import deque
 import matplotlib.dates as mdates
 from matplotlib import style
+from PIL import Image, ImageTk
 
 # Set matplotlib style
 style.use('dark_background')
@@ -22,6 +23,10 @@ BAUD_RATE = 115200
 LOG_FILE = "cansat_log.txt"
 CSV_FILE = "cansat_data.csv"
 MAX_DATA_POINTS = 100  # Maximum number of data points to show on graphs
+
+# Define image paths - make sure these files exist in your app directory
+SPLASH_IMAGE_PATH = "cansat_splash.jpg"  # The elf on can image
+SATELLITE_IMAGE_PATH = "satellite_face.jpg"  # The face with satellite dish image
 
 # Define a vibrant color palette
 COLORS = {
@@ -93,12 +98,81 @@ class CustomStyle(ttk.Style):
                        foreground=COLORS['text'], font=('Arial', 10, 'bold'))
 
 
+class SplashScreen(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+
+        # Remove window decorations
+        self.overrideredirect(True)
+
+        # Set window position to center of screen
+        self.geometry("600x600")
+        self.center_window()
+
+        # Make the window on top
+        self.attributes("-topmost", True)
+
+        # Set background image
+        try:
+            img = Image.open(SPLASH_IMAGE_PATH)
+            img = img.resize((600, 600), Image.LANCZOS)
+            self.bg_image = ImageTk.PhotoImage(img)
+            self.bg_label = tk.Label(self, image=self.bg_image)
+            self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        except Exception as e:
+            print(f"Error loading splash image: {e}")
+            self.bg_label = tk.Label(self, text="CanSat Ground Station",
+                                     font=("Arial", 24, "bold"),
+                                     bg=COLORS['background'], fg=COLORS['accent'])
+            self.bg_label.place(relx=0.5, rely=0.4, anchor='center')
+
+        # Add a title
+        title_label = tk.Label(self, text="CanSat Ground Station",
+                               font=("Arial", 24, "bold"),
+                               bg='black', fg=COLORS['accent'])
+        title_label.place(relx=0.5, rely=0.1, anchor='center')
+
+        # Add loading text
+        self.loading_label = tk.Label(self, text="Loading...",
+                                      font=("Arial", 14),
+                                      bg='black', fg=COLORS['text'])
+        self.loading_label.place(relx=0.5, rely=0.9, anchor='center')
+
+        # Add start button - appears after short delay
+        self.after(2000, self.show_start_button)
+
+    def show_start_button(self):
+        self.loading_label.destroy()
+        start_button = tk.Button(self, text="Start Ground Station",
+                                 font=("Arial", 14, "bold"),
+                                 bg=COLORS['button_bg'], fg=COLORS['text'],
+                                 activebackground=COLORS['button_active'],
+                                 command=self.close_splash)
+        start_button.place(relx=0.5, rely=0.9, anchor='center')
+
+    def close_splash(self):
+        self.destroy()
+        self.parent.deiconify()  # Show main window
+
+    def center_window(self):
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f'+{x}+{y}')
+
+
 class CanSatGUI:
     def __init__(self, master):
         self.master = master
         master.title("CanSat Ground Station")
         master.geometry("1000x700")  # Larger initial window size
         master.configure(bg=COLORS['background'])
+
+        # Hide main window initially for splash screen
+        master.withdraw()
 
         # Apply custom style
         self.style = CustomStyle()
@@ -339,6 +413,9 @@ class CanSatGUI:
 
         # Log startup
         self.log_debug("Application started. Debug mode enabled.")
+
+        # Show splash screen
+        self.splash = SplashScreen(master)
 
     def log_debug(self, message):
         """Log a debug message to the debug console"""
@@ -956,6 +1033,7 @@ def main():
     try:
         import tkintermapview
         import matplotlib
+        import PIL
     except ImportError as e:
         error_window = tk.Toplevel(root)
         error_window.title("Missing Package")
