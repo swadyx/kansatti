@@ -1,5 +1,5 @@
 #include "CanSatNeXT.h"
-// tämä on uudempi muokattu versio groundstation koodista
+
 #ifndef DEFINITIONS_H 
 #define DEFINITIONS_H
 
