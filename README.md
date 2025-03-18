@@ -7,8 +7,8 @@ Library for the most profesisional CanSat -Code for measuring the contents of th
 Valittii tälläneCase<br>
 
 TODO: <br>
-reset handling
-write to a csv file
-turn off mq in recovery mode
-go to recovery mode in 5 minutes after liftoff
-make ground app write data to a csv file
+reset handling <br>
+write to a csv file <br>
+turn off mq in recovery mode <br>
+go to recovery mode in 5 minutes after liftoff <br>
+make ground app write data to a csv file <br>
