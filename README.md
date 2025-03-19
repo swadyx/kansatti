@@ -7,7 +7,6 @@ Library for the most profesisional CanSat -Code for measuring the contents of th
 Valittii tälläneCase<br>
 
 TODO: <br>
-turn off mq in recovery mode <br>
-go to recovery mode in 5 minutes after liftoff <br>
 make ground app write data to a csv file <br>
 make a function that checks what is initialized <br>
+get ground pressure and temp average and store them <br>
