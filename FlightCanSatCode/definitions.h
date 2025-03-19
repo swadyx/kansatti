@@ -1,6 +1,28 @@
 #ifndef DEFINITIONS_H 
 #define DEFINITIONS_H
 
+
+// Global state variables 
+int STATE =                     0; // Prelaunch
+unsigned long LAUNCH_TIME =     0;
+unsigned long LAUNCH_TIME_TO_ADD=0; // for unexpected resets: adds time to the current time so that time is correctly calculated
+float LIFTOFF_ACCEL_THRESHOLD = 1.8; // < 2
+int SEARCH_TIME =               0;
+bool LED_IS_ON =                false;
+int TIME_BETWEEN_MEASUREMENTS = 800; // in ms
+int CHANGE_TO_RECOVERY_AFTER_S    = 300; // in s
+const String DATA_FILE =        "/data.csv"; 
+const String STATE_FILE =       "/state.txt";
+const String LAUNCH_TIME_FILE = "/launch_time.txt";
+bool SCD40_INITIALIZED =        false;
+bool GPS_INITIALIZED      = false;
+bool MQ4_INITIALIZED      = false;
+bool MQ135_INITIALIZED    = false;
+bool LDR_INITIALIZED      = false;
+bool BOARD_TEMP_INITIALIZED     = false;
+bool BOARD_PRESSURE_INITIALIZED = false;
+bool BOARD_ACCEL_INITIALIZED    = false;
+
 TinyGPSPlus gps;
 
 struct MQSensorData {
@@ -42,6 +64,7 @@ struct Measurements {
   MQSensorData mq;
   GPSData gps;
   BoardSensorsData board;
+  float mission_time_s;
 };
 
 #endif // DEFINITIONS_H

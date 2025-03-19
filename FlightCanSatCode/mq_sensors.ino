@@ -1,12 +1,14 @@
 #include "definitions.h"
 
 void setup_mq_sensors() {  
-  // Initialize the MCP3008 using the provided line:
-  // adc.begin(SPI_CLK, SPI_MOSI, SPI_MISO, ADC_CS);
   pinMode(27, OUTPUT);
   pinMode(32, INPUT);
   pinMode(33, INPUT);
   digitalWrite(27, HIGH);
+}
+
+void desetup_mq_sensors() {  
+  digitalWrite(27, LOW);
 }
 
 MQSensorData get_mq_sensor_data() {

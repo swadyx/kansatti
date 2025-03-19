@@ -1,17 +1,23 @@
+#include "definitions.h"
+
 void prelaunch_mode() {
   blinkLED();
   delay(2000);
 }
 
 void flight_mode(){
-  float LDR_voltage = analogReadVoltage(LDR);
   Measurements data = get_measurements();
-  sendMeasurements(data);
-  // sendData("DATA" + String(LDR_voltage));
-  savedata(data);
+  writeFile(LAUNCH_TIME_FILE, data.mission_time_s*1000);
+  int write_error = save_data(data);
+  int transmission_error = sendMeasurements(data);
   blinkLED();
-  delay(1000);
-
+  delay(TIME_BETWEEN_MEASUREMENTS);
+  if (data.mission_time_s > CHANGE_TO_RECOVERY_AFTER_S) {
+    desetup_mq_sensors();
+    STATE = 2;
+    writeFile(STATE_FILE, STATE);
+    writeFile(LAUNCH_TIME_FILE, "0");
+  } 
 }
 
 

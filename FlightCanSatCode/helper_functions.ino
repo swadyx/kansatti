@@ -1,6 +1,4 @@
-
-
-const String states = "/states.csv";
+#include "definitions.h"
 
 Measurements get_measurements () {
   Measurements data;
@@ -16,11 +14,13 @@ Measurements get_measurements () {
   }
   data.board = get_board_sensor_data();
 
+  data.mission_time_s = ((millis()+LAUNCH_TIME_TO_ADD) - LAUNCH_TIME) / 1000.0;
+
   return data;
 }
 
 
-void sendMeasurements(Measurements meas) {
+int sendMeasurements(Measurements meas) {
 //   // Construct a comma-separated message with a unique prefix "MEAS:"
   String message = "MEAS:"; 
   message += String(meas.scd40.co2Concentration) + ",";
@@ -51,10 +51,10 @@ void sendMeasurements(Measurements meas) {
   message += String(meas.board.acc_z);
   
 //   // Transmit the complete measurements message
-  sendData(message);
+  return sendData(message);
 }
 
-void sendGPS(GPSData gps) {
+int sendGPS(GPSData gps) {
 //   // Construct a comma-separated message with a unique prefix "MEAS:"
   String message = "GPS:"; 
   
@@ -69,7 +69,7 @@ void sendGPS(GPSData gps) {
   message += String(gps.minute) + ",";
   message += String(gps.second) + ",";
   
-  sendData(message);
+  return sendData(message);
 }
 
 void blinkLED()
@@ -88,47 +88,114 @@ void onDataReceived(String data) {
   
   if (data == "PRELAUNCH") {
     STATE = 0;
-    writeFile(states, String(State));
-
+    writeFile(STATE_FILE, STATE);
+    writeFile(LAUNCH_TIME_FILE, "0");
   }
   else if (data == "FLIGHT") {
+    setup_mq_sensors();
+    LAUNCH_TIME = millis();
     STATE = 1;
-    writeFile(states, String(STATE));
+    writeFile(STATE_FILE, STATE);
   }
   else if (data == "RECOVERY") {
+    desetup_mq_sensors();
     STATE = 2;
-    writeFile(states, String(STATE));
+    writeFile(STATE_FILE, STATE);
+    writeFile(LAUNCH_TIME_FILE, "0");
   }
   else if (data == "INIT_SCD40") {
-    logAndSend("Initializing SCD40 sensor...");
+    sendData("Initializing SCD40 sensor...");
     if (init_scd40_sensor()) {
-      logAndSend("SCD40 sensor initialization complete");
+      sendData("SCD40 sensor initialization complete");
     } else {
-      logAndSend("SCD40 sensor initialization failed");
+      sendData("SCD40 sensor initialization failed");
     }
   }
   else if (data == "INIT_GPS") {
-    logAndSend("Initializing GPS sensor...");
+    sendData("Initializing GPS sensor...");
     if (init_gps_sensor()) {
-      logAndSend("GPS sensor initialization complete");
+      sendData("GPS sensor initialization complete");
     } else {
-      logAndSend("GPS sensor initialization failed");
+      sendData("GPS sensor initialization failed");
     }
   }
   else if (data == "INIT_MQ") {
-    logAndSend("Initializing MQ sensors...");
+    sendData("Initializing MQ sensors...");
     if (init_mq_sensor()) {
-      logAndSend("MQ sensors initialization complete");
+      sendData("MQ sensors initialization complete");
     } else {
-      logAndSend("MQ sensors initialization failed");
+      sendData("MQ sensors initialization failed");
     }
   }
   else if (data == "INIT_BOARD") {
-    logAndSend("Initializing board sensors...");
+    sendData("Initializing board sensors...");
     if (init_board_sensor()) {
-      logAndSend("Board sensors initialization complete");
+      sendData("Board sensors initialization complete");
     } else {
-      logAndSend("Board sensors initialization failed");
+      sendData("Board sensors initialization failed");
     }
+  } else if (data == "DEINIT_MQ") {
+    sendData("Deinitializing MQ sensors...");
+    desetup_mq_sensors();
+  } else if (data == "RESET") {
+    sendData("RESET");
+    abort();
+  } else {
+    sendData("Unknown/corrupted command!");
   }
+}
+
+int save_data(Measurements data) {
+
+  float ldr = data.board.ldr;  // mainboard built-in sensors data
+  float temperature = data.board.temperature;
+  float pressure = data.board.pressure;
+  float acceleration = data.board.acceleration;
+
+  float temperaturescd40 = data.scd40.temperature;  // scd40 sensor datas
+  uint16_t co2Concentration = data.scd40.co2Concentration;
+  float relativehumidity = data.scd40.relativeHumidity;
+
+  int mq135 = data.mq.mq135;  // mq-sensors data
+  int mq4 = data.mq.mq4;
+
+  bool updatedData = data.gps.dataUpdated;  // gps sensor data
+  double lat = data.gps.latitude;
+  double lon = data.gps.longitude;
+  double alt = data.gps.altitude;
+  double spd = data.gps.speed;
+  uint8_t stlts = data.gps.satellites;
+  int hour = data.gps.hour;
+  int min = data.gps.minute;
+  int sec = data.gps.second;
+  int error = data.scd40.error;
+
+  float mission_time_s = data.mission_time_s;
+
+  // Create combined data string with all measurements
+  String allDataString =
+    String(mission_time_s, 1) + ":" + String(pressure, 2) + ":" + String(temperature, 2) + ":" + String(ldr, 2) + ":" + String(acceleration, 2) + ":";
+
+  // Add SCD40 data (use placeholder values if error)
+  if (error != 1) {
+    allDataString +=
+      String(temperaturescd40, 2) + ":" + String(co2Concentration) + ":" + String(relativehumidity, 2) + ":";
+  } else {
+    allDataString += "NA:NA:NA:";
+  }
+
+  // Add MQ sensor data
+  allDataString +=
+    String(mq135) + ":" + String(mq4) + ":";
+
+  // Add GPS data (use placeholder values if not updated)
+  if (updatedData) {
+    allDataString +=
+      String(lat, 6) + ":" + String(lon, 6) + ":" + String(alt, 2) + ":" + String(spd, 2) + ":" + String(stlts);
+  } else {
+    allDataString += "NA:NA:NA:NA:NA";
+  }
+
+  // Append the combined data to the all_data file
+  return appendFile(DATA_FILE, allDataString + "\n");
 }
