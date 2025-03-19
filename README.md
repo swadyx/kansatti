@@ -12,3 +12,4 @@ write to a csv file <br>
 turn off mq in recovery mode <br>
 go to recovery mode in 5 minutes after liftoff <br>
 make ground app write data to a csv file <br>
+make a function that checks what is initialized <br>
