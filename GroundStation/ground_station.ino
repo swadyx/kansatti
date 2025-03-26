@@ -3,6 +3,8 @@
 #ifndef DEFINITIONS_H 
 #define DEFINITIONS_H
 
+const String datafile = "/data.csv";
+
 struct MQSensorData {
   int mq135;
   int mq4;
@@ -42,12 +44,18 @@ struct Measurements {
   MQSensorData mq;
   GPSData gps;
   BoardSensorsData board;
+  unsigned long timestamp;  // Added timestamp field
 };
 
 #endif // DEFINITIONS_H
 
-// Helper function to print a Measurements structure
+// Global variables for mission time tracking
+unsigned long launchTime = 0;
+bool flightModeActive = false;
+
+// Helper function to print a Measurements structure with timestamp
 void printMeasurements(const Measurements& meas) {
+  // Print with timestamp and individual labels
   Serial.println("Received Measurements:");
   
   Serial.print("SCD40 CO2: ");
@@ -97,6 +105,45 @@ void printMeasurements(const Measurements& meas) {
   Serial.println(meas.board.acc_y);
   Serial.print("Board Acc Z: ");
   Serial.println(meas.board.acc_z);
+  
+  // Also send a single CSV line for easy logging, including mission time
+  Serial.print("CSV:");
+  Serial.print(meas.scd40.error);
+  Serial.print(",");
+  Serial.print(meas.timestamp);
+  Serial.print(",");
+  Serial.print(flightModeActive ? (meas.timestamp - launchTime) : 0);  // Mission time
+  Serial.print(",");
+
+  Serial.print(meas.scd40.co2Concentration);
+  Serial.print(",");
+  Serial.print(meas.scd40.temperature);
+  Serial.print(",");
+  Serial.print(meas.scd40.relativeHumidity);
+  Serial.print(",");
+  Serial.print(meas.mq.mq135);
+  Serial.print(",");
+  Serial.print(meas.mq.mq4);
+  Serial.print(",");
+  Serial.print(meas.gps.latitude, 6);
+  Serial.print(",");
+  Serial.print(meas.gps.longitude, 6);
+  Serial.print(",");
+  Serial.print(meas.gps.altitude);
+  Serial.print(",");
+  Serial.print(meas.board.temperature);
+  Serial.print(",");
+  Serial.print(meas.board.pressure);
+  Serial.print(",");
+  Serial.print(meas.board.ldr);
+  Serial.print(",");
+  Serial.print(meas.board.acceleration);
+  Serial.print(",");
+  Serial.print(meas.board.acc_x);
+  Serial.print(",");
+  Serial.print(meas.board.acc_y);
+  Serial.print(",");
+  Serial.println(meas.board.acc_z);
 }
 
 // Helper function to parse a comma-separated measurements payload
@@ -105,6 +152,9 @@ bool parseMeasurements(String payload, Measurements &meas) {
   int startIdx = 0;
   int commaIdx;
   String token;
+  
+  // Add timestamp when parsing measurements
+  meas.timestamp = millis();
   
   for (int i = 0; i < expectedTokens; i++) {
     commaIdx = payload.indexOf(',', startIdx);
@@ -155,19 +205,47 @@ void loop() {
     String receivedMessage = Serial.readStringUntil('\n'); 
     Serial.print("Command to transmit: ");
     Serial.println(receivedMessage);
+    
+    // Check if the command is to enter flight mode
+    if (receivedMessage == "FLIGHT" && !flightModeActive) {
+      launchTime = millis();
+      flightModeActive = true;
+      Serial.println("LAUNCH_TIME_SET");
+    } 
+    // Check if the command is to exit flight mode
+    else if (receivedMessage == "RECOVERY" || receivedMessage == "PRELAUNCH") {
+      flightModeActive = false;
+    }
+    
     sendData(receivedMessage);  
   }
 }
 
 void onDataReceived(String data)
 {
+  // Add timestamp to all received data
+  unsigned long currentMillis = millis();
+  
   // Process state message
   if (data.startsWith("STATE: ")) {
     String stateStr = data.substring(7);
     stateStr.trim();
     int state = stateStr.toInt();
     
-    Serial.print("State: ");
+    // Check if entering FLIGHT mode
+    if (state == 1 && !flightModeActive) {
+      launchTime = currentMillis;
+      flightModeActive = true;
+      Serial.println("LAUNCH_TIME_SET");
+    } else if (state != 1) {
+      flightModeActive = false;
+    }
+    
+    Serial.print("TIME:");
+    Serial.print(currentMillis);
+    Serial.print(" MISSION_TIME:");
+    Serial.print(flightModeActive ? (currentMillis - launchTime) : 0);
+    Serial.print(" STATE:");
     if (state == 0) {
       Serial.println("prelaunch");
     } else if (state == 1) {
@@ -186,6 +264,11 @@ void onDataReceived(String data)
   }
   // Handle other data
   else {
+    Serial.print("TIME:");
+    Serial.print(currentMillis);
+    Serial.print(" MISSION_TIME:");
+    Serial.print(flightModeActive ? (currentMillis - launchTime) : 0);
+    Serial.print(" MSG:");
     Serial.println(data);
   }
 }
