@@ -1,0 +1,24 @@
+import serial
+tiedosto = "tarkeetiedosto.txt" #make this file for yourself
+# Avaa yhteys sarjaporttiin (muuta 'COM3' oikeaksi portiksi, esim. Linuxissa '/dev/ttyUSB0')
+ser = serial.Serial(port='COM5', baudrate=115200, timeout=1)
+
+# Lähetä dataa
+
+while True:
+    data = ser.readline().decode('utf-8').strip()
+
+    if data.startswith("CSV:"):
+        oikea_data = data[4:]  # Poistetaan "CSV:"-alku
+        print("Oikeaa dataa:", oikea_data)
+
+        with open(tiedosto, "a") as t:
+            t.write(oikea_data + "\n")
+
+        if oikea_data[5] == "1":
+            print("Vanhaa dataa")
+        elif oikea_data[5] == "0":
+            print("Uutta dataa")
+
+# Sulje yhteys
+ser.close()
