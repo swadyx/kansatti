@@ -14,14 +14,6 @@ int CHANGE_TO_RECOVERY_AFTER_S    = 300; // in s
 const String DATA_FILE =        "/data.csv"; 
 const String STATE_FILE =       "/state.txt";
 const String LAUNCH_TIME_FILE = "/launch_time.txt";
-bool SCD40_INITIALIZED =        false;
-bool GPS_INITIALIZED      = false;
-bool MQ4_INITIALIZED      = false;
-bool MQ135_INITIALIZED    = false;
-bool LDR_INITIALIZED      = false;
-bool BOARD_TEMP_INITIALIZED     = false;
-bool BOARD_PRESSURE_INITIALIZED = false;
-bool BOARD_ACCEL_INITIALIZED    = false;
 
 TinyGPSPlus gps;
 

@@ -4,6 +4,21 @@ void setup_neo6m() {
   Serial2.begin(9600, SERIAL_8N1, 16, 17);  // GPS connected to Serial2 (UART2)
 }
 
+bool test_gps_sensor() {
+  unsigned long startTime = millis();
+  while (millis() - startTime < 30000) {  // Wait at most 30 seconds
+    GPSData gpsData = get_gps_data();
+    if (gpsData.dataUpdated) {
+      sendData("GPS-fix acquired!");
+      return true;
+    }
+    sendData("Waiting for a GPS fix...");
+    delay(1000);
+  }
+  sendData("GPS initialization timed out!");
+  return false;
+}
+
 GPSData get_gps_data() {
   GPSData data;
   data.dataUpdated = false;  // Default to no new data
