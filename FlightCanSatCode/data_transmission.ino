@@ -56,7 +56,7 @@ void onDataReceived(String data) {
   }
   else if (data == "FLIGHT") {
     setup_mq_sensors();
-    LAUNCH_TIME = millis();
+    LAUNCH_TIME_MS = millis();
     STATE = 1;
     writeFile(STATE_FILE, STATE);
   }

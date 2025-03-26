@@ -4,8 +4,8 @@
 
 // Global state variables 
 int STATE =                     0; // Prelaunch
-unsigned long LAUNCH_TIME =     0;
-unsigned long LAUNCH_TIME_TO_ADD=0; // for unexpected resets: adds time to the current time so that time is correctly calculated
+unsigned long LAUNCH_TIME_MS =  0;
+unsigned long LAUNCH_TIME_TO_ADD_MS = 0; // for unexpected resets: adds time to the current time so that time is correctly calculated
 float LIFTOFF_ACCEL_THRESHOLD = 1.8; // < 2
 int SEARCH_TIME =               0;
 bool LED_IS_ON =                false;
@@ -56,7 +56,7 @@ struct Measurements {
   MQSensorData mq;
   GPSData gps;
   BoardSensorsData board;
-  float mission_time_s;
+  float mission_time_ms;
 };
 
 #endif // DEFINITIONS_H

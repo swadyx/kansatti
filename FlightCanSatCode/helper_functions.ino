@@ -13,7 +13,7 @@ Measurements get_measurements () {
     Serial.print("New gps data not available!");
   }
   data.board = get_board_sensor_data();
-  data.mission_time_s = ((millis()+LAUNCH_TIME_TO_ADD) - LAUNCH_TIME) / 1000.0;
+  data.mission_time_ms = ((millis()+LAUNCH_TIME_TO_ADD_MS) - LAUNCH_TIME_MS);
   return data;
 }
 
@@ -37,11 +37,11 @@ int save_data(Measurements data) {
   int min = data.gps.minute;
   int sec = data.gps.second;
   int error = data.scd40.error;
-  float mission_time_s = data.mission_time_s;
+  float mission_time_ms = data.mission_time_ms;
 
   // Create combined data string with all measurements
   String allDataString =
-    String(mission_time_s, 1) + ":" + String(pressure, 2) + ":" + String(temperature, 2) + ":" + String(ldr, 2) + ":" + String(acceleration, 2) + ":";
+    String(mission_time_ms/1000, 1) + ":" + String(pressure, 2) + ":" + String(temperature, 2) + ":" + String(ldr, 2) + ":" + String(acceleration, 2) + ":";
   // Add SCD40 data (use placeholder values if error)
   if (error != 1) {
     allDataString +=

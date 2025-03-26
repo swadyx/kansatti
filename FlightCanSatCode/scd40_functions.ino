@@ -29,7 +29,7 @@ bool setup_scd40() {
   }
   error = sensor.getSerialNumber(serialNumber);
   if (error != NO_ERROR) {
-    rreturn false;
+    return false;
   }
   
   error = sensor.startPeriodicMeasurement();

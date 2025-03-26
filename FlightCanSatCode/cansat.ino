@@ -6,7 +6,6 @@
 #include "definitions.h"
 
 void setup() {
-
   CanSatInit(28);
   Serial.begin(115200);  // for debugging (if needed)
   sendData("CANSAT ON!");
@@ -18,11 +17,11 @@ void setup() {
   // the following is for unexpected resets
   String prev_state_str = readFile(STATE_FILE);
   prev_state_str.trim();
-  if (prev_state_str.toInt(); == 1) {  //flight mode
-    LAUNCH_TIME = millis();
+  if (prev_state_str.toInt() == 1) {  //flight mode
+    LAUNCH_TIME_MS = millis();
     String launch_time_to_add_str = readFile(LAUNCH_TIME_FILE); // read this from a file
     launch_time_to_add_str.trim();
-    LAUNCH_TIME_TO_ADD = launch_time_to_add_str.toInt();
+    LAUNCH_TIME_TO_ADD_MS = launch_time_to_add_str.toInt();
     STATE = 1;
     sendData("Mid-flight reset detected! Continuing...");
     setup_mq_sensors();

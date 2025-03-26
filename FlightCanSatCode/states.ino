@@ -7,7 +7,7 @@ void prelaunch_mode() {
 
 void flight_mode() {
   Measurements data = get_measurements();
-  writeFile(LAUNCH_TIME_FILE, data.mission_time_s*1000);
+  writeFile(LAUNCH_TIME_FILE, data.mission_time_ms);
   save_data(data);
   sendMeasurements(data);
   blinkLED();
